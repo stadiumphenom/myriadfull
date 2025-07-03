@@ -23,3 +23,44 @@ if st.button("Run Dream Simulation"):
     output = engine.generate_frame_data()
     compose_frame(output, emotion)
     st.success("Dreamframe composed and saved.")
+
+# --- Frame Preview Section ---
+import os
+import json
+import glob
+import matplotlib.pyplot as plt
+
+st.markdown("---")
+st.header("📊 Frame Visualizer")
+
+render_files = sorted(glob.glob("renders/frame_*.json"), reverse=True)
+
+if not render_files:
+    st.warning("No rendered frames found. Run a simulation first.")
+else:
+    latest_file = render_files[0]
+    st.success(f"Loaded: {latest_file}")
+
+    with open(latest_file, "r") as f:
+        data = json.load(f)
+
+    st.subheader("🧠 Emotion Data Snapshot")
+    st.json(data["data"][-1])
+
+    st.subheader("🎨 Layer Info")
+    st.write(f"Background: `{data['background']}`")
+    st.write(f"Character: `{data['character']}`")
+    st.write(f"FX: `{data['fx']}`")
+
+    last_frame = data["data"][-1]
+    if len(last_frame) >= 2:
+        keys = list(last_frame.keys())[:3]
+        values = [last_frame[k] for k in keys]
+
+        fig, ax = plt.subplots()
+        ax.bar(keys, values, color="mediumslateblue")
+        ax.set_ylim(0, 1.2)
+        ax.set_title("Frame Metric Preview")
+        st.pyplot(fig)
+    else:
+        st.info("Not enough metrics for a plot.")

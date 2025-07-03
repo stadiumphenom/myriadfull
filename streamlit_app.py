@@ -1,6 +1,9 @@
+import os
 import streamlit as st
+
 from engines import engine_ego, engine_echo, engine_drift, engine_form
 from frame_composer import compose_frame
+from frame_renderer import render_frame_as_image  # ✅ Add this
 
 ENGINE_MAP = {
     "ego-loss": engine_ego.MyriadEgoEngine,
@@ -21,11 +24,17 @@ if st.button("Run Dream Simulation"):
     EngineClass = ENGINE_MAP.get(emotion, engine_ego.MyriadEgoEngine)
     engine = EngineClass(emotion=emotion, sim_count=sim_count, drift_factor=drift)
     output = engine.generate_frame_data()
+
     compose_frame(output, emotion)
-    st.success("Dreamframe composed and saved.")
+
+    # ✅ Renders PNG for streamlit preview
+    render_frame_as_image(output, "renders/frame_preview.png")
+
+    st.success("Dreamframe composed and preview image saved.")
 
 # --- 🖼️ Rendered Image Preview ---
 if os.path.exists("renders/frame_preview.png"):
     st.image("renders/frame_preview.png", caption="🌀 Dreamframe Preview", use_column_width=True)
 else:
     st.info("No preview image found. Generate a frame to see it here.")
+

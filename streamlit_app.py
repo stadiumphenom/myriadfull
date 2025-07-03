@@ -1,36 +1,51 @@
 
 import os
 import streamlit as st
-from engines import engine_ego, engine_echo, engine_drift, engine_form
-from frame_renderer import render_frame_as_image
+from mock_engine import MockEngine
+from render_frame import render_frame_as_image
+from composer import compose_audio_loop
+import json
 
 ENGINE_MAP = {
-    "ego-loss": engine_ego.MyriadEgoEngine,
-    "echo": engine_echo.MyriadEchoEngine,
-    "chaos": engine_drift.MyriadDriftEngine,
-    "structured": engine_form.MyriadFormEngine
+    "ego-loss": MockEngine,
+    "echo": MockEngine,
+    "chaos": MockEngine,
+    "structured": MockEngine
 }
 
-st.title("Myriad Dream Engine")
-st.markdown("Simulate emotional dreamframes using Myriad's layered engine system.")
+st.set_page_config(page_title="Myriad Dream Engine", layout="centered")
+st.title("🌌 Myriad Dream Engine")
+st.markdown("Create immersive dreamframes using Myriad's layered simulation system.")
 
-emotion = st.selectbox("Emotion Key", list(ENGINE_MAP.keys()))
+prompt = st.text_input("Dream Prompt", "Enter memory fragment, dream theme, or phrase")
+emotion = st.selectbox("Emotion Key", list(ENGINE_MAP.keys()), index=0)
 sim_count = st.slider("Simulation Cycles", min_value=1000, max_value=50000, value=10000, step=1000)
 drift = st.slider("Drift Factor", min_value=0.0, max_value=1.0, value=0.1, step=0.01)
+audio_file = st.file_uploader("Upload Audio for Dreamloop", type=["mp3", "wav"])
 
 if st.button("Run Dream Simulation"):
-    st.write(f"Simulating `{emotion}` with {sim_count} cycles and drift {drift}")
-    EngineClass = ENGINE_MAP.get(emotion, engine_ego.MyriadEgoEngine)
+    st.info(f"🌀 Simulating `{emotion}` with {sim_count} cycles and drift {drift}...")
+    EngineClass = ENGINE_MAP[emotion]
     engine = EngineClass(emotion=emotion, sim_count=sim_count, drift_factor=drift)
-    output = engine.generate_frame_data()
+    engine.prompt = prompt
+    frames = engine.generate_multiple_frames(num_frames=10)
 
-    # Ensure the render directory exists
-    os.makedirs("renders", exist_ok=True)
-    render_frame_as_image(output, "renders/frame_preview.png")
-    st.success("Dreamframe composed and saved.")
+    os.makedirs("renders/frames_audio", exist_ok=True)
+    for i, data in enumerate(frames):
+        img_path = f"renders/frames_audio/frame_{i:03d}.png"
+        render_frame_as_image(data, img_path)
+    with open("renders/frame_output.json", "w") as f:
+        json.dump(frames[-1], f)
+    st.success("All dreamframes generated.")
 
-# --- 🖼️ Rendered Image Preview ---
-if os.path.exists("renders/frame_preview.png"):
-    st.image("renders/frame_preview.png", caption="🌀 Dreamframe Preview", use_column_width=True)
-else:
-    st.info("No preview image found. Generate a frame to see it here.")
+    if audio_file:
+        audio_path = f"uploads/{audio_file.name}"
+        os.makedirs("uploads", exist_ok=True)
+        with open(audio_path, "wb") as f:
+            f.write(audio_file.read())
+        compose_audio_loop(audio_path)
+        st.video("renders/dreamloop_audio.mp4")
+
+st.markdown("---")
+if os.path.exists("renders/frames_audio/frame_000.png"):
+    st.image("renders/frames_audio/frame_000.png", caption=f"🌀 {emotion.title()} — Prompt: {prompt}", use_column_width=True)

@@ -2,3 +2,4 @@ librosa
 audioread
 moviepy
 Pillow
+streamlit

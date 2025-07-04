@@ -3,3 +3,4 @@ audioread
 moviepy
 Pillow
 streamlit
+requests
